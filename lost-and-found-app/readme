@@ -25,3 +25,77 @@ pip install -r requirements.txt
 
 关于数据库：
 在两个database.py里修改自己的数据库配置
+
+
+
+
+报告：
+分布式失物招领系统项目报告（Lost & Found System）
+项目概述
+本项目旨在构建一个基于Web的分布式失物招领信息系统，允许用户在线发布、浏览、评论失物或招领信息。系统采用前后端分离架构，后端基于FastAPI构建，并通过PostgreSQL持久化数据，前端使用HTML+JavaScript构建，用户交互简洁直观。系统按照分布式架构组织，划分为两个主要服务：
+
+user_service: 负责用户注册、登录和身份验证。
+item_service: 负责失物/招领信息管理、评论、图片上传等功能。
+
+
+功能实现与符合要求说明
+✅ 多个服务运行
+用户服务运行在 localhost:8001，物品服务运行在 localhost:8002，互不依赖数据库结构，松耦合设计。
+使用 .bat 文件或双控制台分别运行两个服务。
+
+✅ 用户身份认证（Token）
+用户登录成功后由 user_service 返回 JWT。
+item_service 在处理敏感请求（发布、编辑、删除、评论）时，需附带 Authorization: Bearer xxx 请求头，验证后识别用户。
+
+✅ 数据持久化
+使用 PostgreSQL 数据库，数据库配置在各自服务 database.py 文件中统一设置，符合分布式部署规范。
+所有数据（用户、信息、评论、图片文件名）都保存至数据库和磁盘。
+
+✅ 前端界面友好
+共实现以下主要页面：
+login.html：登录
+register.html：注册
+report.html：发布信息
+items.html：浏览/评论/删除/编辑信息
+edit.html：编辑信息
+页面通过 JavaScript 动态加载数据并展示，包含图片渲染、评论展开等交互。
+
+✅ 附加功能
+支持上传并显示图片，图片保存在后端 uploads/ 目录。
+支持评论信息的删除与修改，仅限评论者本人操作。
+支持信息的删除与编辑，仅限发布者本人操作。
+信息类型支持“失物”、“招领”双向分类。
+
+技术栈与依赖说明：
+后端框架：FastAPI
+前端：原生 HTML + Bootstrap 5 + JavaScript
+数据库：PostgreSQL
+Token机制：JWT（使用标准库 jwt 和 secrets）
+图片上传：UploadFile + StaticFiles 路由支持访问
+
+
+lost-and-found-app/
+├── user_service/
+│   ├── app.py
+│   ├── routes.py
+│   ├── models.py
+│   ├── database.py
+│   └── ...
+├── item_service/
+│   ├── app.py
+│   ├── routes.py
+│   ├── models.py
+│   ├── database.py
+│   ├── uploads/
+│   └── ...
+├── static/
+│   ├── items.html
+│   ├── edit.html
+│   ├── report.html
+│   └── ...
+
+
+安全性与权限控制：
+系统在前后端均做了权限判断，未登录用户无法发布/编辑/评论。
+所有数据操作均要求携带 Token。
+用户只能修改或删除自己的数据和评论。
