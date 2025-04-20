@@ -1,0 +1,27 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+  }
+  
+  h2, h4 {
+    color: #007bff;
+  }
+  
+  .card-body {
+    padding: 30px;
+  }
+  
+  button {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
