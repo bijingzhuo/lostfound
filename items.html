@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>失物信息列表</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .comment-box {
+      margin-top: 10px;
+      padding-left: 1rem;
+      border-left: 2px solid #ddd;
+    }
+
+    .comment {
+      margin-bottom: 8px;
+    }
+
+    img.item-image {
+      max-width: 200px;
+      margin-top: 10px;
+      border-radius: 4px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+
+<body class="bg-light">
+  <div class="container mt-5">
+    <h2 class="text-center mb-4">所有失物 / 招领信息</h2>
+    <div id="loading" class="text-center text-secondary mb-3">正在加载中...</div>
+    <ul id="itemlist" class="list-group shadow-sm"></ul>
+    <br />
+    <div class="text-center">
+      <a href="report.html" class="btn btn-primary">发布新信息</a>
+    </div>
+  </div>
+
+  <script>
+    async function loadItems() {
+      const loading = document.getElementById("loading");
+      const list = document.getElementById("itemlist");
+      const currentUser = localStorage.getItem("username");
+
+      try {
+        const res = await fetch("http://127.0.0.1:8002/items");
+        const data = await res.json();
+
+        if (!data.items || data.items.length === 0) {
+          loading.innerText = "暂无失物信息~";
+          return;
+        }
+
+        loading.remove();
+
+        data.items.forEach(item => {
+          const li = document.createElement("li");
+          li.classList.add("list-group-item");
+          const typeLabel = item.type === "lost" 
+            ? '<span class="badge bg-danger me-2">❌ 失物</span>' 
+            : '<span class="badge bg-success me-2">✅ 招领</span>';
+
+          li.innerHTML = `
+            ${typeLabel}<strong>${item.name}</strong> - ${item.description}<br/>
+            <span class="text-muted">${item.location}，${item.date}</span><br/>
+            <small class="text-secondary">发布者：${item.reported_by}</small><br/>
+            ${item.image ? `<img src="http://127.0.0.1:8002/uploads/${item.image}" alt="物品图片" class="item-image">` : ''}
+            <br/>
+            <button class="btn btn-link btn-sm" onclick="toggleComments(${item.id})">💬 显示/隐藏评论</button>
+            <div class="comment-box" id="comments-${item.id}" style="display: none;"></div>
+            <div class="mt-2">
+              <textarea id="comment-${item.id}" class="form-control form-control-sm" placeholder="写下你的评论..."></textarea>
+              <button class="btn btn-outline-secondary btn-sm mt-1" onclick="submitComment(${item.id})">发送</button>
+            </div>
+            ${item.reported_by === currentUser ? `
+              <button class="btn btn-sm btn-outline-danger mt-2 me-1" onclick="deleteItem(${item.id})">🗑 删除</button>
+              <button class="btn btn-sm btn-outline-primary mt-2" onclick="window.location.href='edit.html?id=${item.id}'">✏ 修改</button>
+            ` : ''}
+          `;
+
+          list.appendChild(li);
+        });
+
+      } catch (error) {
+        loading.innerText = "加载失败，请检查网络或服务器是否开启";
+        console.error("加载错误：", error);
+      }
+    }
+
+
+    async function toggleComments(itemId) {
+      const commentBox = document.getElementById(`comments-${itemId}`);
+      if (commentBox.style.display === "none") {
+        const res = await fetch(`http://127.0.0.1:8002/items/${itemId}/comments`);
+        const data = await res.json();
+        commentBox.innerHTML = "";
+
+        data.comments.forEach(c => {
+          const div = document.createElement("div");
+          div.classList.add("comment");
+          div.innerHTML = `
+            <strong>${c.commenter}</strong>: 
+            <span id="content-${c.id}">${c.content}</span> 
+            <small class="text-muted">(${new Date(c.time).toLocaleString()})</small>
+            ${c.commenter === localStorage.getItem("username") ? `
+              <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteComment(${itemId}, ${c.id})">删除</button>
+              <button class="btn btn-sm btn-outline-primary ms-1" onclick="editComment(${itemId}, ${c.id}, '${c.content.replace(/'/g, "\\'")}')">编辑</button>
+            ` : ''}
+          `;
+
+          commentBox.appendChild(div);
+        });
+
+        commentBox.style.display = "block";
+      } else {
+        commentBox.style.display = "none";
+      }
+    }
+
+    async function submitComment(itemId) {
+      const token = localStorage.getItem("token");
+      const textarea = document.getElementById(`comment-${itemId}`);
+      const content = textarea.value.trim();
+
+      if (!token) {
+        alert("请先登录！");
+        window.location.href = "login.html";
+        return;
+      }
+
+      if (!content) {
+        alert("评论内容不能为空！");
+        return;
+      }
+
+      const res = await fetch(`http://127.0.0.1:8002/items/${itemId}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ content })
+      });
+
+      if (res.ok) {
+        alert("评论成功！");
+        textarea.value = "";
+        toggleComments(itemId); // 重新加载评论
+      } else {
+        alert("评论失败！");
+      }
+    }
+
+    async function deleteItem(itemId) {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("请先登录！");
+        return;
+      }
+
+      if (!confirm("确定要删除该信息吗？")) return;
+
+      const res = await fetch(`http://127.0.0.1:8002/items/${itemId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": "Bearer " + token
+        }
+      });
+
+      if (res.ok) {
+        alert("✅ 删除成功！");
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.detail || "❌ 删除失败！");
+      }
+    }
+
+    function editItem(itemId) {
+      window.location.href = `edit.html?id=${itemId}`;
+    }
+
+    window.onload = loadItems;
+
+    async function deleteComment(itemId, commentId) {
+      const token = localStorage.getItem("token");
+      if (!confirm("确定删除这条评论吗？")) return;
+      const res = await fetch(`http://127.0.0.1:8002/items/${itemId}/comments/${commentId}`, {
+        method: "DELETE",
+        headers: { "Authorization": "Bearer " + token }
+      });
+      if (res.ok) {
+        alert("评论已删除");
+        toggleComments(itemId);
+      } else {
+        alert("删除失败");
+      }
+    }
+
+    async function editComment(itemId, commentId, oldContent) {
+      const newContent = prompt("修改评论：", oldContent);
+      if (!newContent || newContent.trim() === "") return;
+
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://127.0.0.1:8002/items/${itemId}/comments/${commentId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ content: newContent })
+      });
+
+      if (res.ok) {
+        alert("评论修改成功");
+        toggleComments(itemId);
+      } else {
+        alert("评论修改失败");
+      }
+    }
+  </script>
+
+</body>
+
+</html>
