@@ -99,3 +99,12 @@ lost-and-found-app/
 系统在前后端均做了权限判断，未登录用户无法发布/编辑/评论。
 所有数据操作均要求携带 Token。
 用户只能修改或删除自己的数据和评论。
+
+
+
+技术概念 | 是否体现 | 说明
+分布式系统设计挑战 | ✅ | 项目设计为两个服务（user_service 和 item_service），涉及服务间身份验证、数据隔离、状态管理，正体现了分布式系统设计中的关键问题。
+多线程 / 并发处理 | ✅（间接） | FastAPI 内部基于 async 和异步 I/O 机制处理并发请求（非传统线程模型但实现异步高并发）。
+RPC（远程过程调用） | ✅（HTTP） | 用户服务通过 HTTP 请求（REST API）调用 item_service，逻辑上构成了一种 RPC（基于 REST）。
+SOAP/REST | ✅（REST） | 项目采用的是 RESTful API（FastAPI 实现），符合课程“至少使用 SOAP 或 REST”的要求。
+微服务架构（Microservices） | ✅ | 项目明确分为两个独立微服务（user_service 和 item_service），符合微服务原则：服务拆分、独立部署、独立数据库等。

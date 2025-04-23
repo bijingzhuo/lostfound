@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>失物信息列表</title>
+  <title>Lost and Found Items List</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
@@ -28,12 +28,12 @@
 
 <body class="bg-light">
   <div class="container mt-5">
-    <h2 class="text-center mb-4">所有失物 / 招领信息</h2>
-    <div id="loading" class="text-center text-secondary mb-3">正在加载中...</div>
+    <h2 class="text-center mb-4">All Lost / Found Items</h2>
+    <div id="loading" class="text-center text-secondary mb-3">Loading...</div>
     <ul id="itemlist" class="list-group shadow-sm"></ul>
     <br />
     <div class="text-center">
-      <a href="report.html" class="btn btn-primary">发布新信息</a>
+      <a href="report.html" class="btn btn-primary">Post New Item</a>
     </div>
   </div>
 
@@ -48,7 +48,7 @@
         const data = await res.json();
 
         if (!data.items || data.items.length === 0) {
-          loading.innerText = "暂无失物信息~";
+          loading.innerText = "No lost and found items yet~";
           return;
         }
 
@@ -58,24 +58,24 @@
           const li = document.createElement("li");
           li.classList.add("list-group-item");
           const typeLabel = item.type === "lost" 
-            ? '<span class="badge bg-danger me-2">❌ 失物</span>' 
-            : '<span class="badge bg-success me-2">✅ 招领</span>';
+            ? '<span class="badge bg-danger me-2">❌ Lost Item</span>' 
+            : '<span class="badge bg-success me-2">✅ Found Item</span>';
 
           li.innerHTML = `
             ${typeLabel}<strong>${item.name}</strong> - ${item.description}<br/>
             <span class="text-muted">${item.location}，${item.date}</span><br/>
-            <small class="text-secondary">发布者：${item.reported_by}</small><br/>
-            ${item.image ? `<img src="http://127.0.0.1:8002/uploads/${item.image}" alt="物品图片" class="item-image">` : ''}
+            <small class="text-secondary">Reported by:${item.reported_by}</small><br/>
+            ${item.image ? `<img src="http://127.0.0.1:8002/uploads/${item.image}" alt="Item Image" class="item-image">` : ''}
             <br/>
-            <button class="btn btn-link btn-sm" onclick="toggleComments(${item.id})">💬 显示/隐藏评论</button>
+            <button class="btn btn-link btn-sm" onclick="toggleComments(${item.id})">💬 Show/Hide Comments</button>
             <div class="comment-box" id="comments-${item.id}" style="display: none;"></div>
             <div class="mt-2">
-              <textarea id="comment-${item.id}" class="form-control form-control-sm" placeholder="写下你的评论..."></textarea>
-              <button class="btn btn-outline-secondary btn-sm mt-1" onclick="submitComment(${item.id})">发送</button>
+              <textarea id="comment-${item.id}" class="form-control form-control-sm" placeholder="Write your comment..."></textarea>
+              <button class="btn btn-outline-secondary btn-sm mt-1" onclick="submitComment(${item.id})">Submit</button>
             </div>
             ${item.reported_by === currentUser ? `
-              <button class="btn btn-sm btn-outline-danger mt-2 me-1" onclick="deleteItem(${item.id})">🗑 删除</button>
-              <button class="btn btn-sm btn-outline-primary mt-2" onclick="window.location.href='edit.html?id=${item.id}'">✏ 修改</button>
+              <button class="btn btn-sm btn-outline-danger mt-2 me-1" onclick="deleteItem(${item.id})">🗑 Delete</button>
+              <button class="btn btn-sm btn-outline-primary mt-2" onclick="window.location.href='edit.html?id=${item.id}'">✏ Edit</button>
             ` : ''}
           `;
 
@@ -83,8 +83,8 @@
         });
 
       } catch (error) {
-        loading.innerText = "加载失败，请检查网络或服务器是否开启";
-        console.error("加载错误：", error);
+        loading.innerText = "Load failed, please check network or server";
+        console.error("loading error:", error);
       }
     }
 
@@ -104,7 +104,7 @@
             <span id="content-${c.id}">${c.content}</span> 
             <small class="text-muted">(${new Date(c.time).toLocaleString()})</small>
             ${c.commenter === localStorage.getItem("username") ? `
-              <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteComment(${itemId}, ${c.id})">删除</button>
+              <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteComment(${itemId}, ${c.id})">delete</button>
               <button class="btn btn-sm btn-outline-primary ms-1" onclick="editComment(${itemId}, ${c.id}, '${c.content.replace(/'/g, "\\'")}')">编辑</button>
             ` : ''}
           `;
@@ -124,13 +124,13 @@
       const content = textarea.value.trim();
 
       if (!token) {
-        alert("请先登录！");
+        alert("Please log in first!");
         window.location.href = "login.html";
         return;
       }
 
       if (!content) {
-        alert("评论内容不能为空！");
+        alert("Comment content cannot be empty!");
         return;
       }
 
@@ -144,22 +144,22 @@
       });
 
       if (res.ok) {
-        alert("评论成功！");
+        alert("Comment posted successfully!");
         textarea.value = "";
-        toggleComments(itemId); // 重新加载评论
+        toggleComments(itemId); 
       } else {
-        alert("评论失败！");
+        alert("Failed to post comment!");
       }
     }
 
     async function deleteItem(itemId) {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("请先登录！");
+        alert("Please log in first!");
         return;
       }
 
-      if (!confirm("确定要删除该信息吗？")) return;
+      if (!confirm("Are you sure you want to delete this item?")) return;
 
       const res = await fetch(`http://127.0.0.1:8002/items/${itemId}`, {
         method: "DELETE",
@@ -169,11 +169,11 @@
       });
 
       if (res.ok) {
-        alert("✅ 删除成功！");
+        alert("✅ Deleted successfully!");
         window.location.reload();
       } else {
         const data = await res.json();
-        alert(data.detail || "❌ 删除失败！");
+        alert(data.detail || "❌ Failed to delete!");
       }
     }
 
@@ -185,21 +185,21 @@
 
     async function deleteComment(itemId, commentId) {
       const token = localStorage.getItem("token");
-      if (!confirm("确定删除这条评论吗？")) return;
+      if (!confirm("	Are you sure you want to delete this comment?")) return;
       const res = await fetch(`http://127.0.0.1:8002/items/${itemId}/comments/${commentId}`, {
         method: "DELETE",
         headers: { "Authorization": "Bearer " + token }
       });
       if (res.ok) {
-        alert("评论已删除");
+        alert("Comment deleted");
         toggleComments(itemId);
       } else {
-        alert("删除失败");
+        alert("Delete failed");
       }
     }
 
     async function editComment(itemId, commentId, oldContent) {
-      const newContent = prompt("修改评论：", oldContent);
+      const newContent = prompt("Edit comment:", oldContent);
       if (!newContent || newContent.trim() === "") return;
 
       const token = localStorage.getItem("token");
@@ -213,10 +213,10 @@
       });
 
       if (res.ok) {
-        alert("评论修改成功");
+        alert("Comment updated successfully");
         toggleComments(itemId);
       } else {
-        alert("评论修改失败");
+        alert("Failed to update comment");
       }
     }
   </script>

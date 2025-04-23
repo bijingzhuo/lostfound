@@ -6,10 +6,10 @@ from database import Base, engine
 
 app = FastAPI()
 
-# ✅ 加入跨域中间件
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 允许所有前端地址请求，正式环境可改为特定域名
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -11,7 +11,7 @@ from fastapi import File, UploadFile
 import os
 router = APIRouter()
 
-# ✅ 数据结构：新增 type 字段
+
 class ItemIn(BaseModel):
     name: str
     description: str
@@ -21,7 +21,7 @@ class ItemIn(BaseModel):
     image: str = None 
 
 
-# 获取数据库 session
+
 def get_db():
     db = SessionLocal()
     try:
@@ -29,7 +29,6 @@ def get_db():
     finally:
         db.close()
 
-# ✅ 发布信息（失物或招领）
 @router.post("/report")
 def report_item(item: ItemIn, authorization: str = Header(None), db: Session = Depends(get_db)):
     if not authorization:
@@ -41,7 +40,6 @@ def report_item(item: ItemIn, authorization: str = Header(None), db: Session = D
     if not username:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    # ✅ 加入类型字段
     new_item = Item(
         name=item.name,
         description=item.description,
@@ -56,7 +54,7 @@ def report_item(item: ItemIn, authorization: str = Header(None), db: Session = D
     db.commit()
     return {"message": "Item reported", "reported_by": username}
 
-# ✅ 获取所有信息
+
 @router.get("/items")
 def get_items(db: Session = Depends(get_db)):
     items = db.query(Item).all()
@@ -69,14 +67,14 @@ def get_items(db: Session = Depends(get_db)):
                 "location": i.location,
                 "date": i.date,
                 "reported_by": i.reported_by,
-                "type": i.type,  # ✅ 包含类型字段
+                "type": i.type, 
                 "image": i.image
             }
             for i in items
         ]
     }
 
-# 获取某个失物详情
+
 @router.get("/items/{item_id}")
 def get_item(item_id: int, db: Session = Depends(get_db)):
     item = db.query(Item).filter_by(id=item_id).first()
@@ -84,11 +82,9 @@ def get_item(item_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Item not found")
     return item
 
-# 创建评论的输入模型
 class CommentIn(BaseModel):
     content: str
 
-# 获取某条失物的评论
 @router.get("/items/{item_id}/comments")
 def get_comments(item_id: int, db: Session = Depends(get_db)):
     comments = db.query(Comment).filter_by(item_id=item_id).order_by(Comment.time.desc()).all()
@@ -104,7 +100,7 @@ def get_comments(item_id: int, db: Session = Depends(get_db)):
         ]
     }
 
-# 添加评论
+
 @router.post("/items/{item_id}/comments")
 def add_comment(
     item_id: int,
@@ -142,7 +138,7 @@ async def upload_image(file: UploadFile = File(...)):
         f.write(await file.read())
     return {"filename": file.filename}
 
-# 删除失物信息（仅限发布者）
+
 @router.delete("/items/{item_id}")
 def delete_item(
     item_id: int,
@@ -167,7 +163,7 @@ def delete_item(
     db.commit()
     return {"message": "Item deleted"}
 
-# 修改失物信息（仅限发布者）
+
 class ItemUpdate(BaseModel):
     name: str
     description: str
